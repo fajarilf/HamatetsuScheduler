@@ -171,8 +171,6 @@ namespace HamatetsuScheduler.Api.Service.Implementation
                     TargetQuantityTotal = schedule.Quantity
                 });
 
-                Console.WriteLine($"{schedule.Id}, {proc.Order}, {start} - {finish}");
-
                 //// ignore first 2 process
                 //if (i >= processes.Count - 2)
                 //    continue;
@@ -267,103 +265,86 @@ namespace HamatetsuScheduler.Api.Service.Implementation
             return response;
         }
 
-        public async Task<ScheduleProcessList> GetScheduleByProcess(int process_id)
+        public async Task<ScheduleProcessList> GetScheduleByProcess(int processId)
         {
-            var datalist = new List<ScheduleByProcess>();
-            var result = await _detailRepository
-                .Dbset
-                .Where(d => d.ProcessId == process_id)
+            var result = await _detailRepository.Dbset
+                .Where(d => d.ProcessId == processId)
                 .Include(d => d.SchedulePerDay)
-                .ThenInclude(d => d.Schedule)
-                .ThenInclude(d => d.Part)
+                    .ThenInclude(spd => spd.Schedule)
+                        .ThenInclude(s => s.Part)
                 .Include(d => d.Process)
                 .ToListAsync();
 
-            var processName = result.FirstOrDefault()?.Process.Name;
-            var groupedResult = result.GroupBy(d => d.StartTime);
-
-            foreach (var group in groupedResult)
+            // If no records, return an empty structure
+            if (result.Count == 0)
             {
-                var datas = group.ToList();
-                var processDetails = new List<ProcessDetail>();
-
-                foreach (var data in datas)
+                return new ScheduleProcessList
                 {
-                    processDetails.Add(new ProcessDetail
-                    {
-                        PartName = data.SchedulePerDay.Schedule.Part.Name,
-                        Quantity = data.TargetQuantityPerDay,
-                        PONumber = $"PO-{data.SchedulePerDay.Date}"
-                    });
-                }
-
-                var scheduleByProcess = new ScheduleByProcess
-                {
-                    Date = group.Key,
-                    ProcessDetail = processDetails
+                    ProcessName = string.Empty,
+                    DataList = new List<ScheduleByProcess>()
                 };
-
-                datalist.Add(scheduleByProcess);
             }
 
-            var response = new ScheduleProcessList
+            var processName = result[0].Process.Name;
+
+            var datalist = result
+                .SelectMany(item => ScheduleDetailDto.MakeDateRange(item.StartTime, item.FinishTime)
+                    .Select(date => new { date, item }))
+                .GroupBy(d => d.date)
+                .OrderBy(g => g.Key)
+                .Select(group => new ScheduleByProcess
+                {
+                    Date = group.Key,
+                    ProcessDetail = [.. group
+                        .Select(d => new ProcessDetail
+                        {
+                            PartName = d.item.SchedulePerDay.Schedule.Part.Name,
+                            Quantity = d.item.TargetQuantityPerDay,
+                            PONumber = $"PO-{d.item.SchedulePerDay.Date}"
+                        })]
+                })
+                .ToList();
+
+            return new ScheduleProcessList
             {
-                ProcessName = processName ?? "",
+                ProcessName = processName,
                 DataList = datalist
             };
-
-            return response;
         }
 
         public async Task<List<ScheduleProcessList>> GetScheduleByProcessAll()
         {
-            var response = new List<ScheduleProcessList>();
-            var result = await _detailRepository
-                .Dbset
+            var result = await _detailRepository.Dbset
                 .Include(d => d.SchedulePerDay)
-                .ThenInclude(d => d.Schedule)
-                .ThenInclude(d => d.Part)
+                    .ThenInclude(spd => spd.Schedule)
+                        .ThenInclude(s => s.Part)
                 .Include(d => d.Process)
                 .ToListAsync();
 
-            var groupedByProcess = result.GroupBy(d => d.ProcessId);
-
-            foreach (var byProcess in groupedByProcess)
-            {
-                var groupedResult = byProcess.GroupBy(d => d.StartTime);
-                var datalist = new List<ScheduleByProcess>();
-                var processName = byProcess.FirstOrDefault()?.Process.Name;
-
-                foreach (var group in groupedResult)
+            var response = result
+                .GroupBy(d => new { d.ProcessId, ProcessName = d.Process.Name })
+                .Select(processGroup => new ScheduleProcessList
                 {
-                    var datas = group.ToList();
-                    var processDetails = new List<ProcessDetail>();
-
-                    foreach (var data in datas)
-                    {
-                        processDetails.Add(new ProcessDetail
+                    ProcessName = processGroup.Key.ProcessName,
+                    DataList = [.. processGroup
+                        .SelectMany(item => ScheduleDetailDto.MakeDateRange(item.StartTime, item.FinishTime)
+                            .Select(date => new { date, item }))
+                        .GroupBy(d => d.date)
+                        .OrderBy(g => g.Key)
+                        .Select(timeGroup => new ScheduleByProcess
                         {
-                            PartName = data.SchedulePerDay.Schedule.Part.Name,
-                            Quantity = data.TargetQuantityPerDay,
-                            PONumber = $"PO-{data.SchedulePerDay.Date}"
-                        });
-                    }
-
-                    var scheduleByProcess = new ScheduleByProcess
-                    {
-                        Date = group.Key,
-                        ProcessDetail = processDetails
-                    };
-
-                    datalist.Add(scheduleByProcess);
-                }
-
-                response.Add(new ScheduleProcessList
-                {
-                    ProcessName = processName ?? "",
-                    DataList = datalist
-                });
-            }
+                            Date = timeGroup.Key,
+                            ProcessDetail = [.. timeGroup
+                                .Select(d => new ProcessDetail
+                                {
+                                    PartName = d.item.SchedulePerDay.Schedule.Part.Name,
+                                    Quantity = d.item.TargetQuantityPerDay,
+                                    PONumber = $"PO-{d.item.SchedulePerDay.Date}"
+                                })]
+                        })]
+                })
+                .OrderBy(p => p.ProcessName)
+                .ToList();
 
             return response;
         }
