@@ -1,0 +1,6 @@
+@HamatetsuScheduler.Api_HostAddress = http://localhost:5106
+
+GET {{HamatetsuScheduler.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
