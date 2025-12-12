@@ -87,6 +87,8 @@ namespace HamatetsuScheduler.Api.Service.Implementation
                 workPerDays.Add(schedule);
                 var result = await _perdayRepository.SaveAsync(schedule);
 
+                //Console.WriteLine($"{schedule.Date}");
+
                 await BuildBackwardSchedule(process, result);
             }
 
@@ -133,8 +135,11 @@ namespace HamatetsuScheduler.Api.Service.Implementation
             if (iteration == total)
                 return targetDate;
 
+            if (iteration == total - 1)
+                return SubtractWorkingDays(targetDate, 1);
+
             // the rest
-            return SubtractWorkingDays(targetDate, 1); // Temporary; updated later through nextFinish
+            return targetDate; // Temporary; updated later through nextFinish
         }
 
         private static DateTime DetermineStartDate(int iteration, int total, DateTime finish, int WorkingDay)
@@ -170,6 +175,8 @@ namespace HamatetsuScheduler.Api.Service.Implementation
                     TargetQuantityPerDay = schedule.Quantity / 2,
                     TargetQuantityTotal = schedule.Quantity
                 });
+
+                //Console.WriteLine($"Process: {proc.ProcessName}, Start: {start.ToShortDateString()}, Finish: {finish.ToShortDateString()}");
 
                 //// ignore first 2 process
                 //if (i >= processes.Count - 2)
@@ -281,7 +288,7 @@ namespace HamatetsuScheduler.Api.Service.Implementation
                 return new ScheduleProcessList
                 {
                     ProcessName = string.Empty,
-                    DataList = new List<ScheduleByProcess>()
+                    DataList = []
                 };
             }
 
