@@ -1,4 +1,5 @@
 ﻿using HamatetsuScheduler.Api.Domain.Entity;
+using System.Globalization;
 
 namespace HamatetsuScheduler.Api.Domain.DTO
 {
@@ -11,6 +12,10 @@ namespace HamatetsuScheduler.Api.Domain.DTO
                 Id = entity.Id,
                 PartId = entity.PartId,
                 CustomerId = entity.CustomerId,
+                Month = CultureInfo.InvariantCulture
+                                .DateTimeFormat
+                                .GetMonthName(entity.Month),
+                Year = entity.Year,
                 Part = new PartResponseForSchedule
                 {
                     Name = entity.Part.Name,
@@ -21,7 +26,41 @@ namespace HamatetsuScheduler.Api.Domain.DTO
                     Name = entity.Customer.Name
                 },
                 Quantity = entity.Quantity,
-                PerDays = SchedulePerDayDto.toSchedulePerDayResponseWithoutDetail([.. entity.Schedules])
+            };
+        }
+
+        public static ScheduleWithProcessResponse toScheduleWithProcessResponse(Schedule entity)
+        {
+            var schedules = entity.Schedules.FirstOrDefault();
+            if (schedules == null)
+                return new ScheduleWithProcessResponse
+                {
+                    ScheduleId = entity.Id,
+                    Month = CultureInfo.InvariantCulture
+                                .DateTimeFormat
+                                .GetMonthName(entity.Month),
+                    Year = entity.Year,
+                    PartName = entity.Part.Name,
+                    CustomerName = entity.Customer.Name,
+                    ProcessLists = []
+                };
+
+            return new ScheduleWithProcessResponse
+            {
+                ScheduleId = entity.Id,
+                Month = CultureInfo.InvariantCulture
+                                .DateTimeFormat
+                                .GetMonthName(entity.Month),
+                Year = entity.Year,
+                PartName = entity.Part.Name,
+                CustomerName = entity.Customer.Name,
+                ProcessLists = [.. schedules.Details.Select(d => new ProcessListResponse
+                {
+                    Id = d.Process.Id,
+                    Order = d.Order,
+                    ProcessName = d.Process.Name,
+                    ProcessType = d.Process.Type,
+                })]
             };
         }
     }
@@ -49,10 +88,11 @@ namespace HamatetsuScheduler.Api.Domain.DTO
         public int Id { get; set; }
         public int PartId { get; set; }
         public int CustomerId { get; set; }
+        public string Month { get; set; } = string.Empty;
+        public int Year { get; set; }
         public PartResponseForSchedule Part { get; set; } = new();
         public CustomerResponseForSchedule Customer { get; set; } = new();
         public int Quantity { get; set; }
-        public List<SchedulePerDayResponseWithoutDetail> PerDays { get; set; } = [];
     }
 
     public class PartResponseForSchedule
@@ -83,5 +123,15 @@ namespace HamatetsuScheduler.Api.Domain.DTO
     {
         public string ProcessName { get; set; } = string.Empty;
         public List<ScheduleByProcess> DataList { get; set; } = [];
+    }
+
+    public class ScheduleWithProcessResponse
+    {
+        public int ScheduleId { get; set; }
+        public string Month { get ; set; } = string.Empty;
+        public int Year { get ; set; }
+        public string PartName { get; set; } = string.Empty;
+        public string CustomerName { get; set; } = string.Empty;
+        public List<ProcessListResponse> ProcessLists { get; set; } = [];
     }
 }

@@ -132,14 +132,15 @@ namespace HamatetsuScheduler.Api.Service.Implementation
         private static DateTime DetermineFinishDate(int iteration, int total, DateTime targetDate)
         {
             // first
-            if (iteration == total)
-                return targetDate;
+            //if (iteration == total)
+            //    return targetDate;
 
-            if (iteration == total - 1)
-                return SubtractWorkingDays(targetDate, 1);
+            //if (iteration == total - 1)
+            //    return SubtractWorkingDays(targetDate, 1);
 
-            // the rest
-            return targetDate; // Temporary; updated later through nextFinish
+            //// the rest
+            //return targetDate; // Temporary; updated later through nextFinish
+            return SubtractWorkingDays(targetDate, 1);
         }
 
         private static DateTime DetermineStartDate(int iteration, int total, DateTime finish, int WorkingDay)
@@ -211,7 +212,6 @@ namespace HamatetsuScheduler.Api.Service.Implementation
             var entities = await _repository.Dbset
                 .Include(d => d.Part)
                 .Include(d => d.Customer)
-                .Include(d => d.Schedules)
                 .ToListAsync();
 
             var result = entities
@@ -226,17 +226,21 @@ namespace HamatetsuScheduler.Api.Service.Implementation
             throw new NotImplementedException();
         }
 
-        public async Task<List<SchedulePerDayResponse>> GetScheduleDetail(int schedule_id)
+        public async Task<ScheduleWithProcessResponse> GetScheduleDetail(int schedule_id)
         {
-            var result = await _perdayRepository.Dbset
-                .Where(d => d.ScheduleId == schedule_id)
-                .Include(d => d.Details)
-                .ThenInclude(d => d.Process)
-                .ToListAsync();
+            var result = await _repository
+                .Dbset
+                .Include(d => d.Part)
+                .Include(d => d.Customer)
+                .Include(d => d.Schedules)
+                    .ThenInclude(d => d.Details)
+                        .ThenInclude(d => d.Process)
+                .FirstOrDefaultAsync(d => d.Id == schedule_id);
 
-            var response = result
-                .Select(SchedulePerDayDto.toSchedulePerDayResponse)
-                .ToList();
+            if (result == null)
+                throw new ResponseException(System.Net.HttpStatusCode.NotFound, "Schedule not found");
+
+            var response = ScheduleDto.toScheduleWithProcessResponse(result);
 
             return response;
         }

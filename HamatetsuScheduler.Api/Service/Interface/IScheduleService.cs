@@ -9,7 +9,7 @@ namespace HamatetsuScheduler.Api.Service.Interface
         Task<ScheduleResponse> UpdateScheduleAsync(UpdateScheduleRequest schedule);
         Task DeleteScheduleAsync(int id);
         Task<IEnumerable<ScheduleResponse>> GetAllSchedulesAsync();
-        Task<List<SchedulePerDayResponse>> GetScheduleDetail(int schedule_id);
+        Task<ScheduleWithProcessResponse> GetScheduleDetail(int schedule_id);
         Task<List<ListOfSchedulePerDayResponse>> GetScheduleDetail();
         Task<ScheduleProcessList> GetScheduleByProcess(int process_id);
         Task<List<ScheduleProcessList>> GetScheduleByProcessAll();
