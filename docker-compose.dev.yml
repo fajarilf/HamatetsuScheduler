@@ -1,0 +1,18 @@
+services:
+  hamatetsu-scheduler-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hamatetsu-scheduler-api
+    ports:
+      - "5000:5063"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: "http://+:5063"
+      ConnectionStrings__DefaultConnection: "Server=mysql-server;Database=hamatetsu_scheduling;User=root;Password=OuR18RPjN6"
+    networks:
+      - hamatetsu_scheduling
+
+networks:
+  hamatetsu_scheduling:
+    driver: bridge

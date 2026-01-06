@@ -363,3 +363,5 @@ MigrationBackup/
 FodyWeavers.xsd
 /HamatetsuScheduler.sln
 /HamatetsuScheduler.Api/appsettings.json
+
+docker-compose.prod.yml
