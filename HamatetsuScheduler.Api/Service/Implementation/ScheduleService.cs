@@ -132,8 +132,8 @@ namespace HamatetsuScheduler.Api.Service.Implementation
         private static DateTime DetermineFinishDate(int iteration, int total, DateTime targetDate)
         {
             // first
-            //if (iteration == total)
-            //    return targetDate;
+            if (iteration == total)
+                return targetDate;
 
             //if (iteration == total - 1)
             //    return SubtractWorkingDays(targetDate, 1);
@@ -145,8 +145,8 @@ namespace HamatetsuScheduler.Api.Service.Implementation
 
         private static DateTime DetermineStartDate(int iteration, int total, DateTime finish, int WorkingDay)
         {
-            if (iteration == total)
-                return finish;
+            //if (iteration == total)
+            //    return finish;
 
             return SubtractWorkingDays(finish, WorkingDay);
         }

@@ -42,6 +42,7 @@ namespace HamatetsuScheduler.Api.Domain.DTO
                     Year = entity.Year,
                     PartName = entity.Part.Name,
                     CustomerName = entity.Customer.Name,
+                    Quantity = entity.Quantity,
                     ProcessLists = []
                 };
 
@@ -54,6 +55,7 @@ namespace HamatetsuScheduler.Api.Domain.DTO
                 Year = entity.Year,
                 PartName = entity.Part.Name,
                 CustomerName = entity.Customer.Name,
+                Quantity= entity.Quantity,
                 ProcessLists = [.. schedules.Details.Select(d => new ProcessListResponse
                 {
                     Id = d.Process.Id,
@@ -132,6 +134,7 @@ namespace HamatetsuScheduler.Api.Domain.DTO
         public int Year { get ; set; }
         public string PartName { get; set; } = string.Empty;
         public string CustomerName { get; set; } = string.Empty;
+        public int Quantity { get; set; }
         public List<ProcessListResponse> ProcessLists { get; set; } = [];
     }
 }
